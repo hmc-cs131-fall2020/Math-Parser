@@ -43,6 +43,23 @@ pfail _ = Nothing
                             Just (result2, s'') -> Just (result1 ++ result2, s'')
     Nothing -> Nothing
 
+-- | A parser combinator that discards the left result
+(<-+>) :: ParsingFunction -> ParsingFunction -> ParsingFunction
+(p1 <-+> p2) s =
+  case p1 s of
+    Just (_, s') -> p2 s'
+    Nothing -> Nothing
+
+-- | A parser combinator that discards the right result
+(<+->) :: ParsingFunction -> ParsingFunction -> ParsingFunction
+(p1 <+-> p2) s =
+  case p1 s of
+    Just (result1, s') -> case p2 s' of
+                            Nothing -> Nothing
+                            Just (_, s'') -> Just (result1, s'')
+    Nothing -> Nothing
+
+
 -- | Constructs a parser that matches a specific character
 getCharThat :: (Char -> Bool) -> ParsingFunction
 getCharThat _ "" = Nothing
@@ -87,7 +104,7 @@ spaces = some space
 
 -- | A parser combinator that skips leading whitespace and matches p
 skipws :: ParsingFunction -> ParsingFunction
-skipws p = many space <++> p
+skipws p = many space <-+> p
 
 -- | A parser that matches a number (ignoring leading whitespace)
 number :: ParsingFunction
