@@ -34,7 +34,7 @@ pfail _ = Nothing
     Just (result, s') -> Just (result, s')
     Nothing -> p2 s
     
--- | A parser combinator for sequencing two parsers
+-- | A parser combinator for concatenating two parsers
 (<++>) :: ParsingFunction -> ParsingFunction -> ParsingFunction
 (p1 <++> p2) s =
   case p1 s of
