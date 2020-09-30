@@ -6,6 +6,9 @@ import Data.Char
 
 ------------------------------------------------------------------------------------------
 
+-- | A parsing function is a function from a string (input) to a result (a Maybe "state
+--   pair). If successful the value contains the parse result and the remainder input to
+--   parse. A parser is parameterized by its result type
 type Parser a = String -> Maybe (a, String)
 
 -- | Runs a parser on an input and returns true if and only if the parser succeeds on the
@@ -81,15 +84,16 @@ pfail _ = Nothing
 -- | Constructs a parser that matches a specific character
 getCharThat :: (Char -> Bool) -> Parser Char
 getCharThat _ "" = Nothing
-getCharThat cond s@(c:cs) = 
+getCharThat cond (c:cs) = 
   if cond c 
     then Just (c, cs)
     else Nothing 
 
+-- | Use a function to transform a parse result.
 (>>=:) :: Parser a -> (a -> b) -> Parser b
 (p >>=: f) s =
   case p s of 
-    Just (result, s') -> Just (f result,s')
+    Just (result, s') -> Just (f result, s')
     Nothing -> Nothing
 
 ------------------------------------------------------------------------------------------
