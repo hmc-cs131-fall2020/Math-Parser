@@ -1,30 +1,31 @@
 module Parser where
 
+import Prelude hiding (return)
 import Data.Char
 
 
 ------------------------------------------------------------------------------------------
 
-type ParsingFunction = String -> (Bool, String)
+type ParsingFunction = String -> Maybe (String, String)
 
 -- | Runs a parser on an input and returns true if and only if the parser succeeds on the
 --   entire string
-parse :: ParsingFunction -> String -> Bool
+parse :: ParsingFunction -> String -> String
 parse p input = 
   case p input of 
-    (True, "") -> True
-    (True, remainder) -> error ("Unexpected input: " ++ remainder)
-    (False, _) -> error "Parse error"
+    Just (result, "") -> result
+    Just (_, remainder) -> error ("Unexpected input: " ++ remainder)
+    Nothing -> error "Parse error"
 
 ------------------------------------------------------------------------------------------
 
 -- | A parser that always succeeds without consuming input
-psucceed :: ParsingFunction
-psucceed s = (True, s)
+return :: String -> ParsingFunction
+return result s = Just (result, s)
 
 -- | A parser that always fails without consuming input
 pfail :: ParsingFunction
-pfail s = (False, s)
+pfail _ = Nothing
 
 -- | A parser combinator for alternatives
 (<||>) :: ParsingFunction -> ParsingFunction -> ParsingFunction
