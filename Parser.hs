@@ -86,6 +86,12 @@ getCharThat cond s@(c:cs) =
     then Just (c, cs)
     else Nothing 
 
+(>>=:) :: Parser a -> (a -> b) -> Parser b
+(p >>=: f) s =
+  case p s of 
+    Just (result, s') -> Just (f result,s')
+    Nothing -> Nothing
+
 ------------------------------------------------------------------------------------------
 
 -- | A parser combinator that parses zero or more instances of p
