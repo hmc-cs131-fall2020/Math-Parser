@@ -1,27 +1,30 @@
 module MathParser where
 
 import Parser
+import MathAST
 
 {-
 A parser that matches the grammar
 
-expr ::= factor '+' expr
-      |  factor '-' expr
-      |  factor '*' expr
-      |  factor '/' expr
-      |  factor
+expr ::= factor '+' expr      BinOp <factor> PlusOp  <expr>
+      |  factor '-' expr      BinOp <factor> MinusOp <expr>
+      |  factor '*' expr      BinOp <factor> TimesOp <expr>
+      |  factor '/' expr      BinOp <factor> DivOp   <expr>
+      |  factor               <factor>
 
-factor ::= number
-        |  '(' expr ')'
+factor ::= number             Num <number>
+        |  '(' expr ')'       <expr>
 -}
 
-expr :: ParsingFunction
-expr =  (factor <++> sym '+' <++> expr)
-    <|> (factor <++> sym '-' <++> expr)
-    <|> (factor <++> sym '*' <++> expr)
-    <|> (factor <++> sym '/' <++> expr)        
-    <|> factor
 
-factor :: ParsingFunction
-factor =  number
-      <|> (sym '(' <++> expr <++> sym ')')
+expr :: Parser Exp
+expr =   (factor <+> (sym '+' <-+> expr)               >>=: \ (f, e) -> BinOp f PlusOp e)
+     <|> (factor <+> (sym '-' <-+> expr)               >>=: \ (f, e) -> BinOp f MinusOp e)
+     <|> (factor <+> (sym '*' <-+> expr)               >>=: \ (f, e) -> BinOp f TimesOp e)
+     <|> (factor <+> (sym '/' <-+> expr)               >>=: \ (f, e) -> BinOp f DivOp   e)
+     <|> factor
+
+factor :: Parser Exp
+factor =  (number                                      >>=: \ s -> Num (read s))
+      <|> (sym '(' <-+> expr <+-> sym ')')
+
