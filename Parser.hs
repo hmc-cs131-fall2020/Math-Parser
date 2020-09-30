@@ -43,6 +43,15 @@ pfail _ = Nothing
                             Just (result2, s'') -> Just (result1 ++ result2, s'')
     Nothing -> Nothing
 
+-- | A parser combinator for concatenating two parsers
+(<:>) :: Parser a -> Parser [a] -> Parser [a]
+(p1 <:> p2) s =
+  case p1 s of
+    Just (result1, s') -> case p2 s' of
+                            Nothing -> Nothing
+                            Just (result2, s'') -> Just (result1 : result2, s'')
+    Nothing -> Nothing
+
 -- | A parser combinator that discards the left result
 (<-+>) :: Parser a -> Parser b -> Parser b
 (p1 <-+> p2) s =
@@ -72,11 +81,11 @@ getCharThat cond s@(c:cs) =
 
 -- | A parser combinator that parses zero or more instances of p
 many :: Parser a -> Parser [a]
-many p = (p <++> many p) <|> return ""
+many p = (p <:> many p) <|> return []
 
 -- | A parser combinator that parses one or more instances of p
 some :: Parser a -> Parser [a]
-some p = p <++> many p
+some p = p <:> many p
 
 -- | A parser that matches a digit
 digit :: Parser Char
