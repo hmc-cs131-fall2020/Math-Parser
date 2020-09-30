@@ -6,11 +6,11 @@ import Data.Char
 
 ------------------------------------------------------------------------------------------
 
-type ParsingFunction = String -> Maybe (String, String)
+type Parser a = String -> Maybe (a, String)
 
 -- | Runs a parser on an input and returns true if and only if the parser succeeds on the
 --   entire string
-parse :: ParsingFunction -> String -> String
+parse :: Parser a -> String -> a
 parse p input = 
   case p input of 
     Just (result, "") -> result
@@ -20,22 +20,22 @@ parse p input =
 ------------------------------------------------------------------------------------------
 
 -- | A parser that always succeeds without consuming input
-return :: String -> ParsingFunction
+return :: a -> Parser a
 return result s = Just (result, s)
 
 -- | A parser that always fails without consuming input
-pfail :: ParsingFunction
+pfail :: Parser a
 pfail _ = Nothing
 
 -- | A parser combinator for alternatives
-(<|>) :: ParsingFunction -> ParsingFunction -> ParsingFunction
+(<|>) :: Parser a -> Parser a -> Parser a
 (p1 <|> p2) s = 
   case p1 s of
     Just (result, s') -> Just (result, s')
     Nothing -> p2 s
     
 -- | A parser combinator for concatenating two parsers
-(<++>) :: ParsingFunction -> ParsingFunction -> ParsingFunction
+(<++>) :: Parser [a] -> Parser [a] -> Parser [a]
 (p1 <++> p2) s =
   case p1 s of
     Just (result1, s') -> case p2 s' of
@@ -44,14 +44,14 @@ pfail _ = Nothing
     Nothing -> Nothing
 
 -- | A parser combinator that discards the left result
-(<-+>) :: ParsingFunction -> ParsingFunction -> ParsingFunction
+(<-+>) :: Parser a -> Parser b -> Parser b
 (p1 <-+> p2) s =
   case p1 s of
     Just (_, s') -> p2 s'
     Nothing -> Nothing
 
 -- | A parser combinator that discards the right result
-(<+->) :: ParsingFunction -> ParsingFunction -> ParsingFunction
+(<+->) :: Parser a -> Parser b -> Parser a
 (p1 <+-> p2) s =
   case p1 s of
     Just (result1, s') -> case p2 s' of
@@ -61,55 +61,55 @@ pfail _ = Nothing
 
 
 -- | Constructs a parser that matches a specific character
-getCharThat :: (Char -> Bool) -> ParsingFunction
+getCharThat :: (Char -> Bool) -> Parser Char
 getCharThat _ "" = Nothing
 getCharThat cond s@(c:cs) = 
   if cond c 
-    then Just ([c], cs)
+    then Just (c, cs)
     else Nothing 
 
 ------------------------------------------------------------------------------------------
 
 -- | A parser combinator that parses zero or more instances of p
-many :: ParsingFunction -> ParsingFunction
+many :: Parser a -> Parser [a]
 many p = (p <++> many p) <|> return ""
 
 -- | A parser combinator that parses one or more instances of p
-some :: ParsingFunction -> ParsingFunction
+some :: Parser a -> Parser [a]
 some p = p <++> many p
 
 -- | A parser that matches a digit
-digit :: ParsingFunction
+digit :: Parser Char
 digit = getCharThat isDigit
 
 -- | A parser that matches one or more digits
-digits :: ParsingFunction
+digits :: Parser String
 digits = some digit
 
 -- | A parser that matches a letter
-letter :: ParsingFunction
+letter :: Parser Char
 letter = getCharThat isLetter
 
 -- | A parser that matches one or more letters
-letters :: ParsingFunction
+letters :: Parser String
 letters = some letter
 
 -- | A parser that matches a space
-space :: ParsingFunction
+space :: Parser Char
 space = getCharThat isSpace
 
 -- | A parser that matches one or more spaces
-spaces :: ParsingFunction
+spaces :: Parser String
 spaces = some space
 
 -- | A parser combinator that skips leading whitespace and matches p
-skipws :: ParsingFunction -> ParsingFunction
+skipws :: Parser a -> Parser a
 skipws p = many space <-+> p
 
 -- | A parser that matches a number (ignoring leading whitespace)
-number :: ParsingFunction
+number :: Parser String
 number = skipws digits
 
 -- | Constructs a parser that matches a given character (ignoring leading whitespace)
-sym :: Char -> ParsingFunction
+sym :: Char -> Parser Char
 sym c = skipws (getCharThat (== c))
