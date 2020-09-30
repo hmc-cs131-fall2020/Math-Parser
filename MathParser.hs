@@ -16,12 +16,12 @@ factor ::= number
 -}
 
 expr :: ParsingFunction
-expr =  (factor <&&> sym '+' <&&> expr)
-   <||> (factor <&&> sym '-' <&&> expr)
-   <||> (factor <&&> sym '*' <&&> expr)
-   <||> (factor <&&> sym '/' <&&> expr)        
-   <||> factor
+expr =  (factor <++> sym '+' <++> expr)
+    <|> (factor <++> sym '-' <++> expr)
+    <|> (factor <++> sym '*' <++> expr)
+    <|> (factor <++> sym '/' <++> expr)        
+    <|> factor
 
 factor :: ParsingFunction
 factor =  number
-     <||> (sym '(' <&&> expr <&&> sym ')')
+      <|> (sym '(' <++> expr <++> sym ')')

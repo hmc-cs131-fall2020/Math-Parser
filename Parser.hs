@@ -28,36 +28,38 @@ pfail :: ParsingFunction
 pfail _ = Nothing
 
 -- | A parser combinator for alternatives
-(<||>) :: ParsingFunction -> ParsingFunction -> ParsingFunction
-(p1 <||> p2) s = 
+(<|>) :: ParsingFunction -> ParsingFunction -> ParsingFunction
+(p1 <|> p2) s = 
   case p1 s of
-    (True, s') -> (True, s')
-    (False, _) -> p2 s
+    Just (result, s') -> Just (result, s')
+    Nothing -> p2 s
     
 -- | A parser combinator for sequencing two parsers
-(<&&>) :: ParsingFunction -> ParsingFunction -> ParsingFunction
-(p1 <&&> p2) s =
+(<++>) :: ParsingFunction -> ParsingFunction -> ParsingFunction
+(p1 <++> p2) s =
   case p1 s of
-    (True, s') -> p2 s'
-    (False, _) -> (False, s)
+    Just (result1, s') -> case p2 s' of
+                            Nothing -> Nothing
+                            Just (result2, s'') -> Just (result1 ++ result2, s'')
+    Nothing -> Nothing
 
 -- | Constructs a parser that matches a specific character
 getCharThat :: (Char -> Bool) -> ParsingFunction
-getCharThat _ "" = (False, "")
+getCharThat _ "" = Nothing
 getCharThat cond s@(c:cs) = 
   if cond c 
-    then (True, cs)
-    else (False, s) 
+    then Just ([c], cs)
+    else Nothing 
 
 ------------------------------------------------------------------------------------------
 
 -- | A parser combinator that parses zero or more instances of p
 many :: ParsingFunction -> ParsingFunction
-many p = (p <&&> many p) <||> psucceed
+many p = (p <++> many p) <|> return ""
 
 -- | A parser combinator that parses one or more instances of p
 some :: ParsingFunction -> ParsingFunction
-some p = p <&&> many p
+some p = p <++> many p
 
 -- | A parser that matches a digit
 digit :: ParsingFunction
@@ -85,7 +87,7 @@ spaces = some space
 
 -- | A parser combinator that skips leading whitespace and matches p
 skipws :: ParsingFunction -> ParsingFunction
-skipws p = many space <&&> p
+skipws p = many space <++> p
 
 -- | A parser that matches a number (ignoring leading whitespace)
 number :: ParsingFunction
